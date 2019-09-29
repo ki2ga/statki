@@ -24,9 +24,10 @@
             </tr>
             <tr v-for="row in rows">
                 <th>{{row}}</th>
-                <td v-for="col in cols"></td>
+                <td v-for="col in cols" v-on:click="changeColor"></td>
             </tr>
         </table>
+        <p>{{lastAction}}</p>
     </div>
 
     <script>
@@ -35,7 +36,21 @@
             el: '#app',
             data: {
                 rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
-                cols: Array.from({length:size},(_,idx)=>idx+1)
+                cols: Array.from({length:size},(_,idx)=>idx+1),
+                marked: Array.from({length:size},() => Array.from({length: size},()=> false )),
+                clickedRow: 0,
+                clickedCol: 0
+            },
+            computed: {
+                lastAction: function() {
+                    return 'Row: '+ this.clickedRow +' Column: '+ this.clickedCol}
+            },
+            methods: {
+                changeColor: function(event) {
+                    this.clickedRow= event.target.parentElement.rowIndex
+                    this.clickedCol= event.target.cellIndex
+                    this.marked[this.clickedRow][this.clickedCol]=true
+                }
             }
         })
     </script>
