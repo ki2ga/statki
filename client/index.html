@@ -4,10 +4,13 @@
         table {
             border-spacing: 0;
         }
-        td {
+        td, th {
             border: 1px solid grey;
             width: 2em;
             height: 2em;
+        }
+        td { 
+            background-color: cornflowerblue;
         }
     </style>
 </head>
@@ -16,27 +19,23 @@
     <div id="app">
         <table>
             <tr>
-                <th></th>
-                <th>1</th>
-                <th>2</th>
-                <th>3</th>
-                <th>4</th>
+                <th style="background-color: cornflowerblue;"></th>
+                <th v-for="col in cols">{{col}}</th>
             </tr>
             <tr v-for="row in rows">
                 <th>{{row}}</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td v-for="col in cols"></td>
             </tr>
         </table>
     </div>
 
     <script>
-        var app = new Vue({
+        const size = 10
+        const app = new Vue({
             el: '#app',
             data: {
-                rows: ['A', 'B', 'C', 'D', 'E']
+                rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
+                cols: Array.from({length:size},(_,idx)=>idx+1)
             }
         })
     </script>
