@@ -18,6 +18,9 @@
         td.moving-ship {
             background-color: chocolate;
         }
+        td.invalid-moving-ship {
+            background-color: darksalmon;
+        }
     </style>
 </head>
 
@@ -34,7 +37,7 @@
                     <td v-for="(col, colIndex) in cols"
                         v-on:click="placeShip"
                         v-on:mousemove="moveShip"
-                        v-bind:class="{ship:isShip(rowIndex,colIndex), 'moving-ship':isMovingShip(rowIndex,colIndex)}"
+                        v-bind:class="shipClass(rowIndex, colIndex)"
                     ></td>
                 </tr>
             </table>
@@ -58,7 +61,7 @@
             },
             computed: {
                 lastAction: function() {
-                    return 'Row: '+ this.clickedRow +' Column: '+ this.clickedCol}
+                    return 'Row: '+ this.clickedRow +' Column: '+ this.clickedCol},
             },
             methods: {
                 placeShip: function(event) {
@@ -75,11 +78,20 @@
                         const mouseCol = event.target.cellIndex - 1
                         this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
                             if (rowIndex >= mouseRow - 1 && rowIndex <= mouseRow + 1 && colIndex === mouseCol) {
-                                if (col != 1) col = 2
+                                if (col != 1) {
+                                    if (mouseRow > 0 && mouseRow < size - 1 &&
+                                        this.checkOtherShip(mouseRow - 2, mouseCol - 1, mouseRow + 2, mouseCol + 1)) col = 2
+                                    else col = 3
+                                }
                             } else if (col != 1) col = 0
                             return col
                         }))
                     }
+                },
+                checkOtherShip: function(r1, c1, r2, c2) {
+                    if (r1 < 0) r1 = 0
+                    if (c1 < 0) c1 = 0
+                    return this.shipLocations.slice(r1, r2 + 1).every(row => row.slice(c1, c2 + 1).every(col => col != 1))
                 },
                 cancelMoveShip: function() {
                     this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
@@ -90,11 +102,13 @@
                 clearBoard: function() {
                     this.shipLocations = this.shipLocations.map(row => row.map(_ => 0))
                 },
-                isShip: function(row, col) {
-                    return this.shipLocations[row][col] === 1
-                },
-                isMovingShip: function(row, col) {
-                    return this.shipLocations[row][col] === 2
+                shipClass: function(row, col) {
+                    switch (this.shipLocations[row][col]) {
+                        case 1: return 'ship'
+                        case 2: return 'moving-ship'
+                        case 3: return 'invalid-moving-ship'
+                        default: return ''
+                    }
                 }
             }
         })
