@@ -37,7 +37,7 @@
                     <td v-for="(col, colIndex) in cols"
                         v-on:click="placeShip"
                         v-on:mousemove="moveShip"
-                        v-bind:class="shipClass(rowIndex, colIndex)"
+                        v-bind:class="shipLocations[rowIndex][colIndex]"
                     ></td>
                 </tr>
             </table>
@@ -49,12 +49,13 @@
 
     <script>
         const size = 10
+        const cells = {EMPTY: '', SHIP: 'ship', MOVING_SHIP: 'moving-ship', INVALID: 'invalid-moving-ship'}
         const app = new Vue({
             el: '#app',
             data: {
                 rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
                 cols: Array.from({length:size},(_,idx)=>idx+1),
-                shipLocations: Array.from({length:size},() => Array.from({length: size},() => 0 )),
+                shipLocations: Array.from({length:size},() => Array.from({length: size}, () => cells.EMPTY )),
                 clickedRow: 0,
                 clickedCol: 0,
                 placingShip: 0,
@@ -67,7 +68,7 @@
                 placeShip: function(event) {
                     if (this.placingShip) {
                         this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
-                            if (col === 2) col = 1
+                            if (col === cells.MOVING_SHIP) col = cells.SHIP
                                 return col
                         }))
                     }
@@ -78,38 +79,30 @@
                         const mouseCol = event.target.cellIndex - 1
                         this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
                             if (rowIndex >= mouseRow - 1 && rowIndex <= mouseRow + 1 && colIndex === mouseCol) {
-                                if (col != 1) {
+                                if (col != cells.SHIP) {
                                     if (mouseRow > 0 && mouseRow < size - 1 &&
-                                        this.checkOtherShip(mouseRow - 2, mouseCol - 1, mouseRow + 2, mouseCol + 1)) col = 2
-                                    else col = 3
+                                        this.checkOtherShips(mouseRow - 2, mouseCol - 1, mouseRow + 2, mouseCol + 1)) col = cells.MOVING_SHIP
+                                    else col = cells.INVALID
                                 }
-                            } else if (col != 1) col = 0
+                            } else if (col != cells.SHIP) col = cells.EMPTY
                             return col
                         }))
                     }
                 },
-                checkOtherShip: function(r1, c1, r2, c2) {
+                checkOtherShips: function(r1, c1, r2, c2) {
                     if (r1 < 0) r1 = 0
                     if (c1 < 0) c1 = 0
-                    return this.shipLocations.slice(r1, r2 + 1).every(row => row.slice(c1, c2 + 1).every(col => col != 1))
+                    return this.shipLocations.slice(r1, r2 + 1).every(row => row.slice(c1, c2 + 1).every(col => col != cells.SHIP))
                 },
                 cancelMoveShip: function() {
                     this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
-                        if (col != 1) col = 0
+                        if (col != cells.SHIP) col = cells.EMPTY
                             return col
                     }))
                 },
                 clearBoard: function() {
-                    this.shipLocations = this.shipLocations.map(row => row.map(_ => 0))
+                    this.shipLocations = this.shipLocations.map(row => row.map(_ => cells.EMPTY))
                 },
-                shipClass: function(row, col) {
-                    switch (this.shipLocations[row][col]) {
-                        case 1: return 'ship'
-                        case 2: return 'moving-ship'
-                        case 3: return 'invalid-moving-ship'
-                        default: return ''
-                    }
-                }
             }
         })
     </script>
