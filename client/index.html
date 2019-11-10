@@ -62,10 +62,12 @@
             },
             methods: {
                 placeShip: function(event) {
-                    this.clickedRow= event.target.parentElement.rowIndex - 1
-                    this.clickedCol= event.target.cellIndex - 1
-                    this.shipLocations[this.clickedRow][this.clickedCol] = 1 - this.shipLocations[this.clickedRow][this.clickedCol]
-                    this.$forceUpdate()
+                    if (this.placingShip) {
+                        this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
+                            if (col === 2) col = 1
+                                return col
+                        }))
+                    }
                 },
                 moveShip: function(event) {
                     if (this.placingShip) {
