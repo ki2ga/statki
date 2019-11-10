@@ -12,7 +12,7 @@
         td { 
             background-color: cornflowerblue;
         }
-        td.marked {
+        td.ship {
             background-color: brown;
         }
     </style>
@@ -28,7 +28,7 @@
                 </tr>
                 <tr v-for="(row, rowIndex) in rows">
                     <th>{{row}}</th>
-                    <td v-for="(col, colIndex) in cols" v-on:click="changeColor" v-bind:class="{marked:isMarked(rowIndex,colIndex)}"></td>
+                    <td v-for="(col, colIndex) in cols" v-on:click="changeColor" v-bind:class="{ship:isShip(rowIndex,colIndex)}"></td>
                 </tr>
             </table>
             <p>{{lastAction}}</p>
@@ -43,7 +43,7 @@
             data: {
                 rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
                 cols: Array.from({length:size},(_,idx)=>idx+1),
-                marked: Array.from({length:size},() => Array.from({length: size},()=> false )),
+                shipLocations: Array.from({length:size},() => Array.from({length: size},()=> false )),
                 clickedRow: 0,
                 clickedCol: 0
             },
@@ -55,11 +55,11 @@
                 changeColor: function(event) {
                     this.clickedRow= event.target.parentElement.rowIndex - 1
                     this.clickedCol= event.target.cellIndex - 1
-                    this.marked[this.clickedRow][this.clickedCol]=!this.marked[this.clickedRow][this.clickedCol]
+                    this.shipLocations[this.clickedRow][this.clickedCol]=!this.shipLocations[this.clickedRow][this.clickedCol]
                     this.$forceUpdate()
                 },
-                isMarked: function(row, col) {
-                    return this.marked[row][col]
+                isShip: function(row, col) {
+                    return this.shipLocations[row][col]
                 }
             }
         })
