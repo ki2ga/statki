@@ -49,7 +49,7 @@
                 changeColor: function(event) {
                     this.clickedRow= event.target.parentElement.rowIndex
                     this.clickedCol= event.target.cellIndex
-                    this.marked[this.clickedRow][this.clickedCol]=true
+                    this.marked[this.clickedRow][this.clickedCol]=!this.marked[this.clickedRow][this.clickedCol]
                 }
             }
         })
