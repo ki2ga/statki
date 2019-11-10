@@ -19,7 +19,7 @@
             background-color: chocolate;
         }
         td.invalid-moving-ship {
-            background-color: darksalmon;
+            background-color: grey;
         }
     </style>
 </head>
@@ -44,12 +44,25 @@
             <p>{{lastAction}}</p>
         </div>
         <button v-on:click="clearBoard">Clear board</button>
-        <button v-on:click="placingShip = 1 - placingShip">Place ship</button>
+        <select v-model="placingShip">
+            <option v-for="ship in availableShips" v-bind:value="'v'+ship">Ship {{ship}}</option>
+        </select>
     </div>
 
     <script>
         const size = 10
         const cells = {EMPTY: '', SHIP: 'ship', MOVING_SHIP: 'moving-ship', INVALID: 'invalid-moving-ship'}
+        const allShips = [4,3,3,2,2,2,1,1,1,1]
+        const shipArea = {
+            v1: [0, 0, 0, 0],
+            v2: [0, 0, 1, 0],
+            v3: [-1, 0, 1, 0],
+            v4: [-1, 0, 2, 0],
+            h1: [0, 0, 0, 0],
+            h2: [0, 0, 0, 1],
+            h3: [0, -1, 0, 1],
+            h4: [0, -1, 0, 2],
+        }
         const app = new Vue({
             el: '#app',
             data: {
@@ -58,19 +71,31 @@
                 shipLocations: Array.from({length:size},() => Array.from({length: size}, () => cells.EMPTY )),
                 clickedRow: 0,
                 clickedCol: 0,
-                placingShip: 0,
+                placingShip: 'v' + allShips[0],
+                ships: allShips.slice()
             },
             computed: {
                 lastAction: function() {
                     return 'Row: '+ this.clickedRow +' Column: '+ this.clickedCol},
+                availableShips: function() {
+                    return this.ships
+                }
             },
             methods: {
                 placeShip: function(event) {
                     if (this.placingShip) {
+                        let valid = false
                         this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
-                            if (col === cells.MOVING_SHIP) col = cells.SHIP
-                                return col
+                            if (col === cells.MOVING_SHIP) {
+                                col = cells.SHIP
+                                valid = true
+                            }
+                            return col
                         }))
+                        if (valid) {
+                            this.ships.splice(this.ships.indexOf(+this.placingShip[1]), 1)
+                            this.placingShip = this.ships[0] && 'v' + this.ships[0]
+                        }
                     }
                 },
                 moveShip: function(event) {
@@ -78,10 +103,14 @@
                         const mouseRow = event.target.parentElement.rowIndex - 1
                         const mouseCol = event.target.cellIndex - 1
                         this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
-                            if (rowIndex >= mouseRow - 1 && rowIndex <= mouseRow + 1 && colIndex === mouseCol) {
+                            if (
+                                rowIndex >= mouseRow + shipArea[this.placingShip][0] &&
+                                rowIndex <= mouseRow + shipArea[this.placingShip][2] &&
+                                colIndex >= mouseCol + shipArea[this.placingShip][1] &&
+                                colIndex <= mouseCol + shipArea[this.placingShip][3]
+                            ) {
                                 if (col != cells.SHIP) {
-                                    if (mouseRow > 0 && mouseRow < size - 1 &&
-                                        this.checkOtherShips(mouseRow - 2, mouseCol - 1, mouseRow + 2, mouseCol + 1)) col = cells.MOVING_SHIP
+                                    if (this.validPosition(this.placingShip, mouseRow, mouseCol)) col = cells.MOVING_SHIP
                                     else col = cells.INVALID
                                 }
                             } else if (col != cells.SHIP) col = cells.EMPTY
@@ -89,19 +118,29 @@
                         }))
                     }
                 },
-                checkOtherShips: function(r1, c1, r2, c2) {
-                    if (r1 < 0) r1 = 0
-                    if (c1 < 0) c1 = 0
+                validPosition: function(ship, row, col) {
+                    let r1 = row + shipArea[ship][0]
+                    let c1 = col + shipArea[ship][1]
+                    let r2 = row + shipArea[ship][2]
+                    let c2 = col + shipArea[ship][3]
+                    if (r1 < 0 || c1 < 0 || r2 >= size || c2 >= size) return false
+
+                    if (r1 > 0) r1 -= 1
+                    if (c1 > 0) c1 -= 1
+                    if (r2 < size - 1) r2 += 1
+                    if (c2 < size - 1) c2 += 1
                     return this.shipLocations.slice(r1, r2 + 1).every(row => row.slice(c1, c2 + 1).every(col => col != cells.SHIP))
                 },
                 cancelMoveShip: function() {
                     this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
                         if (col != cells.SHIP) col = cells.EMPTY
-                            return col
+                        return col
                     }))
                 },
                 clearBoard: function() {
                     this.shipLocations = this.shipLocations.map(row => row.map(_ => cells.EMPTY))
+                    this.ships = allShips.slice()
+                    this.placingShip = 'v' + allShips[0]
                 },
             }
         })
