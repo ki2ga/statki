@@ -33,7 +33,7 @@
             </table>
             <p>{{lastAction}}</p>
         </div>
-        <button>Clear board</button>
+        <button v-on:click="clearBoard">Clear board</button>
     </div>
 
     <script>
@@ -57,6 +57,9 @@
                     this.clickedCol= event.target.cellIndex - 1
                     this.marked[this.clickedRow][this.clickedCol]=!this.marked[this.clickedRow][this.clickedCol]
                     this.$forceUpdate()
+                },
+                clearBoard: function() {
+                    this.marked = this.marked.map(row => row.map(_ => false))
                 },
                 isMarked: function(row, col) {
                     return this.marked[row][col]
