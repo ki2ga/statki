@@ -15,25 +15,33 @@
         td.ship {
             background-color: brown;
         }
+        td.moving-ship {
+            background-color: chocolate;
+        }
     </style>
 </head>
 
 <body>
     <div id="app">
         <div>
-            <table>
+            <table v-on:mouseleave="cancelMoveShip">
                 <tr>
                     <th style="background-color: cornflowerblue;"></th>
                     <th v-for="col in cols">{{col}}</th>
                 </tr>
                 <tr v-for="(row, rowIndex) in rows">
                     <th>{{row}}</th>
-                    <td v-for="(col, colIndex) in cols" v-on:click="changeColor" v-bind:class="{ship:isShip(rowIndex,colIndex)}"></td>
+                    <td v-for="(col, colIndex) in cols"
+                        v-on:click="placeShip"
+                        v-on:mousemove="moveShip"
+                        v-bind:class="{ship:isShip(rowIndex,colIndex), 'moving-ship':isMovingShip(rowIndex,colIndex)}"
+                    ></td>
                 </tr>
             </table>
             <p>{{lastAction}}</p>
         </div>
         <button v-on:click="clearBoard">Clear board</button>
+        <button v-on:click="placingShip = 1 - placingShip">Place ship</button>
     </div>
 
     <script>
@@ -43,26 +51,48 @@
             data: {
                 rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
                 cols: Array.from({length:size},(_,idx)=>idx+1),
-                shipLocations: Array.from({length:size},() => Array.from({length: size},()=> false )),
+                shipLocations: Array.from({length:size},() => Array.from({length: size},() => 0 )),
                 clickedRow: 0,
-                clickedCol: 0
+                clickedCol: 0,
+                placingShip: 0,
             },
             computed: {
                 lastAction: function() {
                     return 'Row: '+ this.clickedRow +' Column: '+ this.clickedCol}
             },
             methods: {
-                changeColor: function(event) {
+                placeShip: function(event) {
                     this.clickedRow= event.target.parentElement.rowIndex - 1
                     this.clickedCol= event.target.cellIndex - 1
-                    this.shipLocations[this.clickedRow][this.clickedCol]=!this.shipLocations[this.clickedRow][this.clickedCol]
+                    this.shipLocations[this.clickedRow][this.clickedCol] = 1 - this.shipLocations[this.clickedRow][this.clickedCol]
                     this.$forceUpdate()
                 },
+                moveShip: function(event) {
+                    if (this.placingShip) {
+                        const mouseRow = event.target.parentElement.rowIndex - 1
+                        const mouseCol = event.target.cellIndex - 1
+                        this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
+                            if (rowIndex >= mouseRow - 1 && rowIndex <= mouseRow + 1 && colIndex === mouseCol) {
+                                if (col != 1) col = 2
+                            } else if (col != 1) col = 0
+                            return col
+                        }))
+                    }
+                },
+                cancelMoveShip: function() {
+                    this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
+                        if (col != 1) col = 0
+                            return col
+                    }))
+                },
                 clearBoard: function() {
-                    this.shipLocations = this.shipLocations.map(row => row.map(_ => false))
+                    this.shipLocations = this.shipLocations.map(row => row.map(_ => 0))
                 },
                 isShip: function(row, col) {
-                    return this.shipLocations[row][col]
+                    return this.shipLocations[row][col] === 1
+                },
+                isMovingShip: function(row, col) {
+                    return this.shipLocations[row][col] === 2
                 }
             }
         })
