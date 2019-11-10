@@ -9,7 +9,7 @@
             width: 2em;
             height: 2em;
         }
-        td { 
+        td, th.empty { 
             background-color: cornflowerblue;
         }
         td.ship {
@@ -29,7 +29,7 @@
         <div>
             <table v-on:mouseleave="cancelMoveShip">
                 <tr>
-                    <th style="background-color: cornflowerblue;"></th>
+                    <th class="empty"></th>
                     <th v-for="col in cols">{{col}}</th>
                 </tr>
                 <tr v-for="(row, rowIndex) in rows">
@@ -45,7 +45,7 @@
         <button v-on:click="clearBoard">Clear board</button>
         <button v-on:click="rotateShip">Rotate ship</button>
         <select v-model="placingShip">
-            <option v-for="ship in availableShips" v-bind:value="'v'+ship">Ship {{ship}}</option>
+            <option v-for="ship in availableShips" v-bind:value="ship">Ship {{ship}}</option>
         </select>
     </div>
 
@@ -69,8 +69,9 @@
                 rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
                 cols: Array.from({length:size},(_,idx)=>idx+1),
                 shipLocations: Array.from({length:size},() => Array.from({length: size}, () => cells.EMPTY )),
-                placingShip: 'v' + allShips[0],
-                ships: allShips.slice()
+                placingShip: allShips[0],
+                placingDirection: 'v',
+                ships: allShips.slice(),
             },
             computed: {
                 availableShips: function() {
@@ -89,8 +90,8 @@
                             return col
                         }))
                         if (valid) {
-                            this.ships.splice(this.ships.indexOf(+this.placingShip[1]), 1)
-                            this.placingShip = this.ships[0] && 'v' + this.ships[0]
+                            this.ships.splice(this.ships.indexOf(this.placingShip), 1)
+                            this.placingShip = this.ships[0]
                         }
                     }
                 },
@@ -100,13 +101,13 @@
                         const mouseCol = event.target.cellIndex - 1
                         this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
                             if (
-                                rowIndex >= mouseRow + shipArea[this.placingShip][0] &&
-                                rowIndex <= mouseRow + shipArea[this.placingShip][2] &&
-                                colIndex >= mouseCol + shipArea[this.placingShip][1] &&
-                                colIndex <= mouseCol + shipArea[this.placingShip][3]
+                                rowIndex >= mouseRow + shipArea[this.placingDirection + this.placingShip][0] &&
+                                rowIndex <= mouseRow + shipArea[this.placingDirection + this.placingShip][2] &&
+                                colIndex >= mouseCol + shipArea[this.placingDirection + this.placingShip][1] &&
+                                colIndex <= mouseCol + shipArea[this.placingDirection + this.placingShip][3]
                             ) {
                                 if (col != cells.SHIP) {
-                                    if (this.validPosition(this.placingShip, mouseRow, mouseCol)) col = cells.MOVING_SHIP
+                                    if (this.validPosition(mouseRow, mouseCol)) col = cells.MOVING_SHIP
                                     else col = cells.INVALID
                                 }
                             } else if (col != cells.SHIP) col = cells.EMPTY
@@ -116,10 +117,11 @@
                 },
                 rotateShip: function() {
                     if (this.placingShip) {
-                        this.placingShip = (this.placingShip[0] === 'v' ? 'h' : 'v') + this.placingShip[1]
+                        this.placingDirection = (this.placingDirection === 'v' ? 'h' : 'v')
                     }
                 },
-                validPosition: function(ship, row, col) {
+                validPosition: function(row, col) {
+                    const ship = this.placingDirection + this.placingShip
                     let r1 = row + shipArea[ship][0]
                     let c1 = col + shipArea[ship][1]
                     let r2 = row + shipArea[ship][2]
@@ -141,7 +143,7 @@
                 clearBoard: function() {
                     this.shipLocations = this.shipLocations.map(row => row.map(_ => cells.EMPTY))
                     this.ships = allShips.slice()
-                    this.placingShip = 'v' + allShips[0]
+                    this.placingShip = allShips[0]
                 },
             }
         })
