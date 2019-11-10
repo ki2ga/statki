@@ -12,6 +12,9 @@
         td { 
             background-color: cornflowerblue;
         }
+        td.marked {
+            background-color: brown;
+        }
     </style>
 </head>
 
@@ -22,9 +25,9 @@
                 <th style="background-color: cornflowerblue;"></th>
                 <th v-for="col in cols">{{col}}</th>
             </tr>
-            <tr v-for="row in rows">
+            <tr v-for="(row, rowIndex) in rows">
                 <th>{{row}}</th>
-                <td v-for="col in cols" v-on:click="changeColor"></td>
+                <td v-for="(col, colIndex) in cols" v-on:click="changeColor" v-bind:class="{marked:isMarked(rowIndex,colIndex)}"></td>
             </tr>
         </table>
         <p>{{lastAction}}</p>
@@ -47,9 +50,13 @@
             },
             methods: {
                 changeColor: function(event) {
-                    this.clickedRow= event.target.parentElement.rowIndex
-                    this.clickedCol= event.target.cellIndex
+                    this.clickedRow= event.target.parentElement.rowIndex - 1
+                    this.clickedCol= event.target.cellIndex - 1
                     this.marked[this.clickedRow][this.clickedCol]=!this.marked[this.clickedRow][this.clickedCol]
+                    this.$forceUpdate()
+                },
+                isMarked: function(row, col) {
+                    return this.marked[row][col]
                 }
             }
         })
