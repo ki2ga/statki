@@ -20,17 +20,20 @@
 
 <body>
     <div id="app">
-        <table>
-            <tr>
-                <th style="background-color: cornflowerblue;"></th>
-                <th v-for="col in cols">{{col}}</th>
-            </tr>
-            <tr v-for="(row, rowIndex) in rows">
-                <th>{{row}}</th>
-                <td v-for="(col, colIndex) in cols" v-on:click="changeColor" v-bind:class="{marked:isMarked(rowIndex,colIndex)}"></td>
-            </tr>
-        </table>
-        <p>{{lastAction}}</p>
+        <div>
+            <table>
+                <tr>
+                    <th style="background-color: cornflowerblue;"></th>
+                    <th v-for="col in cols">{{col}}</th>
+                </tr>
+                <tr v-for="(row, rowIndex) in rows">
+                    <th>{{row}}</th>
+                    <td v-for="(col, colIndex) in cols" v-on:click="changeColor" v-bind:class="{marked:isMarked(rowIndex,colIndex)}"></td>
+                </tr>
+            </table>
+            <p>{{lastAction}}</p>
+        </div>
+        <button>Clear board</button>
     </div>
 
     <script>
