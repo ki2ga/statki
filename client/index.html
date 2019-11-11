@@ -3,6 +3,8 @@
     <style>
         table {
             border-spacing: 0;
+            display: inline-table;
+            margin: 10px 20px;
         }
         td, th {
             border: 1px solid grey;
@@ -21,6 +23,12 @@
         td.invalid-moving-ship {
             background-color: grey;
         }
+        td.target {
+            border-radius: 50%;
+        }
+        td.missed {
+            background-color: grey;
+        }
     </style>
 </head>
 
@@ -37,7 +45,21 @@
                     <td v-for="(col, colIndex) in cols"
                         v-on:click="placeShip"
                         v-on:mousemove="moveShip"
-                        v-bind:class="shipLocations[rowIndex][colIndex]"
+                        v-bind:class="myBoard[rowIndex][colIndex]"
+                    ></td>
+                </tr>
+            </table>
+            <table v-on:mouseleave="cancelTarget">
+                <tr>
+                    <th class="empty"></th>
+                    <th v-for="col in cols">{{col}}</th>
+                </tr>
+                <tr v-for="(row, rowIndex) in rows">
+                    <th>{{row}}</th>
+                    <td v-for="(col, colIndex) in cols"
+                        v-on:click="fire"
+                        v-on:mousemove="moveTarget"
+                        v-bind:class="theirBoard[rowIndex][colIndex]"
                     ></td>
                 </tr>
             </table>
@@ -51,7 +73,10 @@
 
     <script>
         const size = 10
-        const cells = {EMPTY: '', SHIP: 'ship', MOVING_SHIP: 'moving-ship', INVALID: 'invalid-moving-ship'}
+        const cells = {
+            EMPTY: '', SHIP: 'ship', MOVING_SHIP: 'moving-ship', INVALID: 'invalid-moving-ship',
+            TARGET: 'target', HIT_SHIP: 'hit-ship', MISSED: 'missed',
+        }
         const allShips = [4,3,3,2,2,2,1,1,1,1]
         const shipArea = {
             v1: [0, 0, 0, 0],
@@ -68,7 +93,8 @@
             data: {
                 rows: Array.from({length:size},(_,idx)=>String.fromCharCode(65 + idx)),
                 cols: Array.from({length:size},(_,idx)=>idx+1),
-                shipLocations: Array.from({length:size},() => Array.from({length: size}, () => cells.EMPTY )),
+                myBoard: Array.from({length:size},() => Array.from({length: size}, () => cells.EMPTY )),
+                theirBoard: Array.from({length:size},() => Array.from({length: size}, () => cells.EMPTY )),
                 placingShip: allShips[0],
                 placingDirection: 'v',
                 ships: allShips.slice(),
@@ -79,10 +105,10 @@
                 }
             },
             methods: {
-                placeShip: function(event) {
+                placeShip: function() {
                     if (this.placingShip) {
                         let valid = false
-                        this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
+                        this.myBoard = this.myBoard.map((row, rowIndex) => row.map((col, colIndex) => {
                             if (col === cells.MOVING_SHIP) {
                                 col = cells.SHIP
                                 valid = true
@@ -97,9 +123,8 @@
                 },
                 moveShip: function(event) {
                     if (this.placingShip) {
-                        const mouseRow = event.target.parentElement.rowIndex - 1
-                        const mouseCol = event.target.cellIndex - 1
-                        this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
+                        const [mouseRow, mouseCol] = this.getEventCoords(event)
+                        this.myBoard = this.myBoard.map((row, rowIndex) => row.map((col, colIndex) => {
                             if (
                                 rowIndex >= mouseRow + shipArea[this.placingDirection + this.placingShip][0] &&
                                 rowIndex <= mouseRow + shipArea[this.placingDirection + this.placingShip][2] &&
@@ -132,19 +157,40 @@
                     if (c1 > 0) c1 -= 1
                     if (r2 < size - 1) r2 += 1
                     if (c2 < size - 1) c2 += 1
-                    return this.shipLocations.slice(r1, r2 + 1).every(row => row.slice(c1, c2 + 1).every(col => col != cells.SHIP))
+                    return this.myBoard.slice(r1, r2 + 1).every(row => row.slice(c1, c2 + 1).every(col => col != cells.SHIP))
                 },
                 cancelMoveShip: function() {
-                    this.shipLocations = this.shipLocations.map((row, rowIndex) => row.map((col, colIndex) => {
+                    this.myBoard = this.myBoard.map((row, rowIndex) => row.map((col, colIndex) => {
                         if (col != cells.SHIP) col = cells.EMPTY
                         return col
                     }))
                 },
                 clearBoard: function() {
-                    this.shipLocations = this.shipLocations.map(row => row.map(_ => cells.EMPTY))
+                    this.myBoard = this.myBoard.map(row => row.map(_ => cells.EMPTY))
                     this.ships = allShips.slice()
                     this.placingShip = allShips[0]
                 },
+                moveTarget: function(event) {
+                    const [mouseRow, mouseCol] = this.getEventCoords(event)
+                    this.theirBoard = this.theirBoard.map((row, rowIndex) => row.map((col, colIndex) => {
+                        if (rowIndex === mouseRow && colIndex === mouseCol) {
+                            if (col === cells.EMPTY) col = cells.TARGET
+                        } else
+                            if (col === cells.TARGET) col = cells.EMPTY
+                        return col
+                    }))
+                },
+                cancelTarget: function() {
+                    this.moveTarget()
+                },
+                fire: function(event) {
+                    const [mouseRow, mouseCol] = this.getEventCoords(event)
+                    this.theirBoard[mouseRow][mouseCol] = cells.MISSED
+                    this.theirBoard = [...this.theirBoard]
+                },
+                getEventCoords: function(event) {
+                    return event ? [event.target.parentElement.rowIndex - 1, event.target.cellIndex - 1] : [-1, -1]
+                }
             }
         })
     </script>
